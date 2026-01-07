@@ -5,8 +5,7 @@
 ![Styling](https://img.shields.io/badge/Tailwind-Glassmorphism-38bdf8?logo=tailwind-css)
 ![Status](https://img.shields.io/badge/Architecture-Event__Driven-success)
 
-![CheapChat Preview](image.png)
-
+[![CheapChat Demo](https://raw.githubusercontent.com/yuvalmiron21/CheapChat/main/cheap-chat-source/image.png)](https://github.com/yuvalmiron21/CheapChat)
 > **"More than just a UI."**
 > CheapChat is a production-grade frontend application designed to simulate a complex, full-stack e-commerce environment using modern React architecture.
 
