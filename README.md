@@ -1,2 +1,2 @@
-# CheapChat-UI
+# CheapChat
 Smart AI products finder 
