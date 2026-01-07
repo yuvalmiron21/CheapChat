@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CheapChat - AI Shopping Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#f97316", // Orange accent from screenshot
+                        secondary: "#8b5cf6", // Indigo/Purple for buttons
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e293b",
+                        "surface-light": "#fef3c7", // Light yellow/cream surface for central card
+                        "surface-dark": "#332616", // Darker version for dark mode
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                        xl: "1rem",
+                        "2xl": "1.5rem",
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px rgba(249, 115, 22, 0.3)',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                    }
+                },
+            },
+        };
+    </script>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+
+    <!-- Rendered Logic Styles from Backup -->
+    <style>
+        /* Custom styles for elegant design */
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Floating elements */
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Glow effects */
+        .glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        /* Animation classes */
+        .fade-in-up {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Product slider styles */
+        .product-slider {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-card.selected {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Chat message styling */
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bot-message {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        /* Dark Mode overrides for logic elements */
+        .dark .product-card {
+            background: rgba(30, 30, 50, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff;
+        }
+
+        .dark .bot-message {
+            background: rgba(30, 30, 50, 0.9);
+            color: #fff;
+        }
+
+        .dark .text-gray-800 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark .text-gray-600 {
+            color: #cbd5e0 !important;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-300">
+    <header
+        class="h-16 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                CC
+            </div>
+            <div>
+                <h1
+                    class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">
+                    CheapChat</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Find best deals, fast</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Top Tools -->
+            <button id="language-toggle"
+                class="hidden lg:flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+                <span class="text-lg">🇺🇸</span> <span id="lang-text">English</span> <span
+                    class="material-icons-round text-base">expand_more</span>
+            </button>
+            <div
+                class="hidden xl:flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
+                <span class="px-2 text-slate-400 dark:text-slate-500 text-sm material-icons-round">attach_money</span>
+                <input id="min-price"
+                    class="w-16 bg-transparent border-none text-sm p-1 focus:ring-0 text-slate-700 dark:text-slate-200 placeholder-slate-400 text-center"
+                    placeholder="Min" type="number" />
+                <span class="text-slate-400">-</span>
+                <input id="max-price"
+                    class="w-16 bg-transparent border-none text-sm p-1 focus:ring-0 text-slate-700 dark:text-slate-200 placeholder-slate-400 text-center"
+                    placeholder="Max" type="number" />
+            </div>
+            <div
+                class="hidden lg:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border border-slate-200 dark:border-slate-700">
+                <span class="material-icons-round text-yellow-500 text-sm">star</span>
+                <select id="min-rating"
+                    class="bg-transparent text-sm text-slate-700 dark:text-slate-200 border-none focus:ring-0 p-0 pr-6">
+                    <option value="">Any</option>
+                    <option value="4.5">4.5+</option>
+                    <option value="4.0">4.0+</option>
+                </select>
+            </div>
+
+            <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
+
+            <div class="flex items-center gap-2">
+                <button id="dark-mode-toggle"
+                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+                    <span class="material-icons-outlined text-xl">light_mode</span>
+                </button>
+                <button id="voice-search"
+                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors hidden sm:block">
+                    <span class="material-icons-outlined text-xl">mic</span>
+                </button>
+                <button id="qr-scanner"
+                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors hidden sm:block">
+                    <span class="material-icons-outlined text-xl">qr_code_scanner</span>
+                </button>
+                <button id="favorites-btn"
+                    class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+                    <span class="material-icons-outlined text-xl">favorite_border</span>
+                    <span id="favorites-count"
+                        class="absolute top-1 right-1 w-4 h-4 bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white dark:border-card-dark"
+                        style="display:none">0</span>
+                </button>
+                <button id="cart-btn"
+                    class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+                    <span class="material-icons-outlined text-xl">shopping_cart</span>
+                    <span id="cart-count"
+                        class="absolute top-1 right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white dark:border-card-dark"
+                        style="display:none">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- Sidebar Navigation -->
+        <nav
+            class="w-16 bg-white dark:bg-card-dark border-r border-slate-200 dark:border-slate-700 flex flex-col items-center py-4 gap-6 shrink-0 z-10 hidden sm:flex">
+            <button id="sidebar-toggle"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                <span id="sidebar-arrow" class="material-icons-round text-xl">chevron_right</span>
+            </button>
+            <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+            <!-- Conversation Placeholders -->
+            <div id="sidebar" class="flex flex-col gap-4 w-full px-2">
+                <!-- Populated by script, or keep static placeholders for design -->
+                <button
+                    class="group relative w-full aspect-square flex items-center justify-center rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors conversation-item">
+                    <span class="material-icons-round text-indigo-500 text-2xl">headphones</span>
+                </button>
+                <button
+                    class="group relative w-full aspect-square flex items-center justify-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 conversation-item">
+                    <span class="material-icons-round text-2xl">laptop_mac</span>
+                </button>
+                <button
+                    class="group relative w-full aspect-square flex items-center justify-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 conversation-item">
+                    <span class="material-icons-round text-2xl">smartphone</span>
+                </button>
+                <button
+                    class="group relative w-full aspect-square flex items-center justify-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 conversation-item">
+                    <span class="material-icons-round text-2xl">search</span>
+                </button>
+            </div>
+        </nav>
+
+        <main id="main-content" class="flex-1 flex flex-col relative bg-slate-50 dark:bg-slate-900">
+            <!-- Navigation Tabs -->
+            <div
+                class="h-16 flex items-center justify-center gap-4 py-3 bg-white/50 dark:bg-card-dark/50 backdrop-blur-sm sticky top-0 z-10">
+                <button id="chat-tab"
+                    class="px-6 py-2 rounded-full bg-primary text-white text-sm font-bold shadow-lg shadow-orange-500/30 flex items-center gap-2 transform hover:scale-105 transition-all">
+                    <span class="material-icons-round text-lg">chat_bubble</span> Chat
+                </button>
+                <button id="forum-tab"
+                    class="px-6 py-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+                    <span class="material-icons-round text-lg text-indigo-500">groups</span> Forum
+                </button>
+                <!-- Admin button removed -->
+            </div>
+
+            <!-- Main Content Area: Welcome Box & Chat -->
+            <div id="main-scroll-area" class="flex-1 overflow-y-auto px-4 pb-32 flex flex-col items-center">
+
+                <!-- Welcome Box (Target for Hiding) -->
+                <div id="welcome-box"
+                    class="w-full max-w-2xl bg-gradient-to-br from-orange-50 via-white to-orange-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 rounded-3xl p-8 md:p-12 text-center shadow-xl border border-orange-100 dark:border-slate-700 relative overflow-hidden mt-8 md:mt-20">
+                    <div class="absolute -top-24 -left-24 w-48 h-48 bg-orange-300/20 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-300/20 rounded-full blur-3xl"></div>
+                    <div
+                        class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/30 flex items-center justify-center mb-6 transform -rotate-6 hover:rotate-0 transition-transform duration-300">
+                        <span class="material-icons-round text-white text-3xl">headset_mic</span>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white mb-4">Welcome to CheapChat!
+                    </h2>
+                    <p class="text-slate-600 dark:text-slate-300 text-lg mb-8 max-w-lg mx-auto leading-relaxed">
+                        I'm your personal deal-finding assistant. I can help you find the best prices on <span
+                            class="font-semibold text-slate-800 dark:text-white">Amazon</span> and <span
+                            class="font-semibold text-slate-800 dark:text-white">AliExpress</span>.
+                    </p>
+                    <div class="mt-10">
+                        <p class="text-primary font-semibold animate-pulse">Start typing to begin your search...</p>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Container (Hidden initially) -->
+                <div id="chat-messages" class="w-full max-w-4xl space-y-4 mt-4 hidden"></div>
+
+            </div>
+
+            <!-- Bottom Input Area -->
+            <div
+                class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-slate-900 dark:via-slate-900/90 dark:to-transparent pt-12 pb-6">
+                <div class="max-w-4xl mx-auto w-full space-y-4">
+                    <!-- Image Upload -->
+                    <div id="image-upload-area"
+                        class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
+                        onclick="document.getElementById('image-input').click()">
+                        <span
+                            class="material-icons-outlined group-hover:text-primary transition-colors">add_photo_alternate</span>
+                        <span class="text-sm font-medium">Upload a product image or drag & drop</span>
+                        <input type="file" id="image-input" accept="image/*" class="hidden"
+                            onchange="handleImageUpload(event)">
+                    </div>
+                    <!-- Image Preview -->
+                    <div id="image-preview"
+                        class="hidden mb-4 bg-white/50 backdrop-blur rounded-xl p-3 border border-slate-200">
+                        <div class="flex items-center space-x-3">
+                            <img id="preview-img" src="" alt="Preview" class="w-12 h-12 object-cover rounded-lg">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-slate-900 dark:text-white">Image uploaded</p>
+                            </div>
+                            <button onclick="removeImage()" class="text-slate-400 hover:text-slate-600">
+                                <span class="material-icons-round">close</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="relative flex items-center group">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl opacity-20 blur-md group-hover:opacity-30 transition-opacity">
+                        </div>
+                        <div
+                            class="relative w-full bg-white dark:bg-card-dark rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center p-2 pl-4">
+                            <span class="material-icons-round text-yellow-500 mr-3 animate-pulse">auto_awesome</span>
+                            <input id="user-input"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-slate-700 dark:text-slate-200 placeholder-slate-400 text-base md:text-lg h-12"
+                                placeholder="Describe what you're looking for or ask about the uploaded image..."
+                                type="text" onkeypress="handleKeyPress(event)" />
+                            <button id="send-button" onclick="sendMessage()"
+                                class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                                <span>Search</span>
+                                <span class="material-icons-round text-sm">send</span>
+                            </button>
+                        </div>
+
+                        <!-- Suggestions Dropdown (Mapped from old script) -->
+                        <div id="suggestions-toggle" class="hidden"></div>
+                        <div id="suggestions-dropdown" class="hidden"></div>
+                    </div>
+
+                    <div class="flex justify-center gap-4 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                        <span class="flex items-center gap-1 cursor-pointer hover:text-primary"
+                            onclick="setQuery('wireless earbuds under $50')"><span
+                                class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Quick suggestions</span>
+                        <span class="flex items-center gap-1 cursor-pointer hover:text-primary"><span
+                                class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Recent searches</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Hidden) -->
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass rounded-2xl p-6 max-w-4xl max-h-[90vh] overflow-hidden relative">
+                <!-- Using glass class from CSS -->
+                <button id="close-modal"
+                    class="absolute top-4 right-4 w-8 h-8 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all duration-200">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <div class="text-center">
+                    <img id="modal-image" src="" alt="Product Image"
+                        class="max-w-full max-h-[70vh] mx-auto rounded-xl shadow-2xl">
+                    <div id="modal-info" class="mt-4 text-white">
+                        <h3 id="modal-title" class="text-xl font-bold mb-2"></h3>
+                        <p id="modal-description" class="text-gray-200"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div
+                class="glass bg-white dark:bg-card-dark rounded-2xl p-6 max-w-2xl max-h-[80vh] overflow-hidden relative w-full">
+                <button id="close-cart-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">🛒 Shopping Cart</h2>
+                </div>
+                <div id="cart-items" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-lg font-semibold text-slate-800 dark:text-white">Total:</span>
+                        <span id="cart-total" class="text-xl font-bold text-green-600">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Modal -->
+    <div id="favorites-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div
+                class="glass bg-white dark:bg-card-dark rounded-2xl p-6 max-w-2xl max-h-[80vh] overflow-hidden relative w-full">
+                <button id="close-favorites-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">❤️ My Favorites</h2>
+                </div>
+                <div id="favorites-items" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Modal -->
+    <div id="reviews-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div
+                class="glass bg-white dark:bg-card-dark rounded-2xl p-6 max-w-4xl max-h-[90vh] overflow-hidden relative w-full">
+                <button id="close-reviews-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <span class="material-icons-round">close</span>
+                </button>
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 text-center">⭐ Product Reviews</h2>
+                <div id="reviews-content" class="space-y-4 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock product database with platform separation
+        const mockProducts = {
+            "earbuds": {
+                amazon: [{ name: "Anker Soundcore Liberty 3 Pro", price: "$79.99", originalPrice: "$129.99", platform: "Amazon", image: "https://placehold.co/150x150/ff9900/ffffff?text=Anker", affiliateLink: "#", savings: "Save 38%", rating: "4.5/5" }, { name: "Jabra Elite 7 Pro Wireless", price: "$149.99", originalPrice: "$249.99", platform: "Amazon", image: "https://placehold.co/150x150/ff9900/ffffff?text=Jabra", affiliateLink: "#", savings: "Save 40%", rating: "4.7/5" }],
+                aliexpress: [{ name: "Sony WF-1000XM4 Noise Canceling", price: "$199.99", originalPrice: "$279.99", platform: "AliExpress", image: "https://placehold.co/150x150/ff6b00/ffffff?text=Sony", affiliateLink: "#", savings: "Save 29%", rating: "4.6/5" }]
+            },
+            "phone": {
+                amazon: [{ name: "Google Pixel 7 Pro", price: "$699.99", originalPrice: "$899.99", platform: "Amazon", image: "https://placehold.co/150x150/ff9900/ffffff?text=Pixel", affiliateLink: "#", savings: "Save 22%", rating: "4.4/5" }],
+                aliexpress: [{ name: "OnePlus 11 5G Smartphone", price: "$649.99", originalPrice: "$799.99", platform: "AliExpress", image: "https://placehold.co/150x150/ff6b00/ffffff?text=OnePlus", affiliateLink: "#", savings: "Save 19%", rating: "4.3/5" }]
+            },
+            "laptop": {
+                amazon: [{ name: "MacBook Air M2", price: "$1099.99", originalPrice: "$1299.99", platform: "Amazon", image: "https://placehold.co/150x150/ff9900/ffffff?text=MacBook", affiliateLink: "#", savings: "Save 15%", rating: "4.8/5" }],
+                aliexpress: [{ name: "Dell XPS 13 Plus", price: "$1299.99", originalPrice: "$1599.99", platform: "Amazon", image: "https://placehold.co/150x150/ff6b00/ffffff?text=Dell", affiliateLink: "#", savings: "Save 19%", rating: "4.6/5" }]
+            }
+        };
+
+        let uploadedImage = null;
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedImage = e.target.result;
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('image-preview').classList.remove('hidden');
+                    document.getElementById('image-upload-area').classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage() {
+            uploadedImage = null;
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('image-upload-area').classList.remove('hidden');
+            document.getElementById('image-input').value = '';
+        }
+
+        function setQuery(query) {
+            document.getElementById('user-input').value = query;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+
+            if (!message && !uploadedImage) return;
+
+            const welcomeBox = document.getElementById('welcome-box');
+            if (welcomeBox) {
+                welcomeBox.style.display = 'none';
+                // Ensure chat messages are visible and take up space properly
+                const chatContainer = document.getElementById('chat-messages');
+                chatContainer.classList.remove('hidden');
+                document.getElementById('main-scroll-area').classList.remove('items-center'); // Allow left/right spread
+            }
+
+            addMessage(message, 'user', uploadedImage);
+
+            input.value = '';
+            removeImage();
+
+            setTimeout(() => {
+                addTypingIndicator();
+            }, 300);
+
+            setTimeout(() => {
+                removeTypingIndicator();
+                generateBotResponse(message.toLowerCase());
+            }, 1500);
+        }
+
+        function addTypingIndicator() {
+            const chatMessages = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex items-start space-x-4 slide-in-right';
+            typingDiv.innerHTML = `
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 float">
+                    <span class="text-white text-sm font-semibold">CC</span>
+                </div>
+                <div class="bot-message rounded-2xl rounded-tl-sm px-6 py-4 dark:text-white">
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full pulse-glow"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full pulse-glow" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full pulse-glow" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            document.getElementById('main-scroll-area').scrollTop = document.getElementById('main-scroll-area').scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function addMessage(text, sender, image = null) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+
+            if (sender === 'user') {
+                messageDiv.className = 'fade-in-up flex justify-end';
+                let messageContent = '';
+                if (image) {
+                    messageContent += `<div class="mb-3"><img src="${image}" alt="Uploaded image" class="w-32 h-32 object-cover rounded-lg"></div>`;
+                }
+                if (text) {
+                    messageContent += `<p class="text-sm">${text}</p>`;
+                }
+                messageDiv.innerHTML = `
+                    <div class="user-message text-white rounded-2xl rounded-tr-sm px-6 py-4 max-w-md shadow-sm">
+                        ${messageContent}
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'fade-in-up flex items-start space-x-4';
+                messageDiv.innerHTML = `
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 float">
+                        <span class="text-white text-sm font-semibold">CC</span>
+                    </div>
+                    <div class="bot-message rounded-2xl rounded-tl-sm px-6 py-4 max-w-3xl shadow-sm dark:bg-card-dark dark:text-white">
+                        ${text}
+                    </div>
+                `;
+            }
+
+            chatMessages.appendChild(messageDiv);
+            // Scroll main area
+            const mainArea = document.getElementById('main-scroll-area');
+            mainArea.scrollTop = mainArea.scrollHeight;
+        }
+
+        // Logic from backup (CreateProductCard etc)
+        function generateBotResponse(query) {
+            let products = [];
+            let responseText = '';
+
+            // Simplified logic for brevity, expanded in real usage
+            if (query.includes('earbud') || query.includes('headphone')) {
+                products = mockProducts.earbuds.amazon;
+                responseText = "Found these headphones:";
+            } else if (query.includes('phone')) {
+                products = mockProducts.phone.amazon;
+                responseText = "Here are some phones:";
+            } else {
+                products = mockProducts.laptop.amazon; // Default
+                responseText = "Checking the best offers for you...";
+            }
+
+            let responseHtml = `
+                <div class="product-slider p-6 dark:bg-card-dark/50">
+                    <p class="text-gray-800 dark:text-gray-200 mb-4 font-medium">${responseText}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        ${products.map(product => `
+                            <div class="product-card p-4 rounded-xl cursor-pointer bg-white" data-product="${product.name}" onclick="selectProduct('${product.name}')">
+                                <div class="flex flex-col space-y-3">
+                                    <div class="relative">
+                                        <img src="${product.image}" alt="${product.name}" class="w-full h-32 object-cover rounded-lg shadow-lg">
+                                        <div class="absolute top-2 right-2 bg-white bg-opacity-90 rounded-full p-1">
+                                            <span class="text-xs font-bold text-gray-700">${product.platform}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-800 text-sm mb-2 dark:text-white">${product.name}</h4>
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="text-green-600 font-bold text-lg">${product.price}</span>
+                                            <span class="text-gray-500 line-through text-sm">${product.originalPrice}</span>
+                                        </div>
+                                        <div class="flex space-x-2 mt-3">
+                                            <button onclick="event.stopPropagation(); addToFavorites('${product.name}')" class="flex-1 bg-gradient-to-r from-pink-100 to-red-100 text-pink-600 text-xs py-2 px-3 rounded-lg">
+                                                ❤️ Love
+                                            </button>
+                                            <button onclick="event.stopPropagation(); addToCart('${product.name}')" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs py-2 px-3 rounded-lg">
+                                                🛒 Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            addMessage(responseHtml, 'bot');
+        }
+
+        function selectProduct(id) {
+            // Placeholder: Select product
+            addMessage(`Loading supplier details for ${id}...`, 'bot');
+            setTimeout(() => {
+                addMessage(`✅ Cheapest supplier found on AliExpress: $${(Math.random() * 50).toFixed(2)} (Free Shipping)`, 'bot');
+            }, 1000);
+        }
+
+        // Cart & Favorites Logic
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+        function addToCart(id) {
+            cart.push({ id: id, quantity: 1 });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCounters();
+            alert('Added to cart');
+        }
+
+        function addToFavorites(id) {
+            favorites.push(id);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateCounters();
+            alert('Added to favorites');
+        }
+
+        function updateCounters() {
+            const cartCount = document.getElementById('cart-count');
+            const favCount = document.getElementById('favorites-count');
+            cartCount.textContent = cart.length;
+            favCount.textContent = favorites.length;
+            cartCount.style.display = cart.length ? 'flex' : 'none';
+            favCount.style.display = favorites.length ? 'flex' : 'none';
+
+            // Populate Modals
+            document.getElementById('cart-items').innerHTML = cart.map(i => `<div class="p-2 border-b">${i.id}</div>`).join('');
+            document.getElementById('favorites-items').innerHTML = favorites.map(i => `<div class="p-2 border-b">${i}</div>`).join('');
+        }
+
+        // Forum Logic (Simplified)
+        function showForum() {
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML = `
+                <div class="h-16 flex items-center justify-center gap-4 py-3 bg-white/50 dark:bg-card-dark/50 backdrop-blur-sm sticky top-0 z-10">
+                     <button onclick="location.reload()" class="px-6 py-2 rounded-full bg-white dark:bg-slate-800 border-slate-200 text-gray-600">Chat</button>
+                     <button class="px-6 py-2 rounded-full bg-primary text-white font-bold">Forum</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 flex flex-col items-center">
+                    <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 mb-6">Community Forum</h1>
+                    <div class="w-full max-w-2xl space-y-4">
+                        <div class="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white">Best noise cancelling headphones?</h3>
+                            <p class="text-slate-600 dark:text-slate-300 mt-2">Looking for recommendations under $200.</p>
+                             <div class="flex justify-between mt-4 text-sm text-slate-500">
+                                <span>posted by @david_k</span>
+                                <span>12 comments</span>
+                            </div>
+                        </div>
+                         <div class="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white">AliExpress hidden gems thread</h3>
+                            <p class="text-slate-600 dark:text-slate-300 mt-2">Share your best finds here!</p>
+                             <div class="flex justify-between mt-4 text-sm text-slate-500">
+                                <span>posted by @sarah_m</span>
+                                <span>45 comments</span>
+                            </div>
+                        </div>
+                    </div>
+                     <button onclick="showCreatePost()" class="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+                        <span class="material-icons-round">edit</span>
+                    </button>
+                </div>
+             `;
+        }
+
+        function showCreatePost() {
+            alert('Create Post Feature - Coming Soon');
+        }
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCounters();
+
+            // Handlers
+            document.getElementById('chat-tab').addEventListener('click', () => location.reload());
+            document.getElementById('forum-tab').addEventListener('click', showForum);
+
+            document.getElementById('cart-btn').addEventListener('click', () => {
+                document.getElementById('cart-modal').classList.remove('hidden');
+            });
+            document.getElementById('favorites-btn').addEventListener('click', () => {
+                document.getElementById('favorites-modal').classList.remove('hidden');
+            });
+
+            // Close Modals
+            document.querySelectorAll('[id^=close-]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.closest('div[id$="-modal"]').classList.add('hidden');
+                });
+            });
+
+            // Dark mode
+            document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+
+            // --- NEW: Fixes for User Reported Issues ---
+
+            // 1. Language Toggle
+            const langBtn = document.getElementById('language-toggle');
+            const langText = document.getElementById('lang-text');
+            let currentLang = 'en';
+
+            if (langBtn) {
+                langBtn.addEventListener('click', () => {
+                    if (currentLang === 'en') {
+                        currentLang = 'he';
+                        langBtn.querySelector('span').textContent = '🇮🇱';
+                        langText.textContent = 'Hebrew';
+                        alert('Language switched to Hebrew (Mock)');
+                    } else {
+                        currentLang = 'en';
+                        langBtn.querySelector('span').textContent = '🇺🇸';
+                        langText.textContent = 'English';
+                        alert('Language switched to English');
+                    }
+                });
+            }
+
+            // 2. Sidebar Toggle
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('nav');
+            const sidebarArrow = document.getElementById('sidebar-arrow');
+            let isSidebarExpanded = false;
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', () => {
+                    isSidebarExpanded = !isSidebarExpanded;
+                    if (isSidebarExpanded) {
+                        sidebar.classList.remove('w-16');
+                        sidebar.classList.add('w-64');
+                        sidebarArrow.textContent = 'chevron_left';
+                        // Show labels for sidebar items (mock logic)
+                        document.querySelectorAll('.conversation-item').forEach(item => {
+                            // complex logic to add text labels would go here, 
+                            // for now just expanding the width is the visual cue
+                            item.style.justifyContent = 'flex-start';
+                            item.style.paddingLeft = '1rem';
+                        });
+                    } else {
+                        sidebar.classList.add('w-16');
+                        sidebar.classList.remove('w-64');
+                        sidebarArrow.textContent = 'chevron_right';
+                        document.querySelectorAll('.conversation-item').forEach(item => {
+                            item.style.justifyContent = 'center';
+                            item.style.paddingLeft = '0';
+                        });
+                    }
+                });
+            }
+
+            // 3. Voice Search
+            const voiceBtn = document.getElementById('voice-search');
+            if (voiceBtn) {
+                voiceBtn.addEventListener('click', () => {
+                    if ('webkitSpeechRecognition' in window) {
+                        const recognition = new webkitSpeechRecognition();
+                        recognition.lang = 'en-US';
+                        recognition.start();
+
+                        // Visual feedback
+                        voiceBtn.classList.add('text-primary', 'animate-pulse');
+
+                        recognition.onresult = (event) => {
+                            const transcript = event.results[0][0].transcript;
+                            document.getElementById('user-input').value = transcript;
+                            voiceBtn.classList.remove('text-primary', 'animate-pulse');
+                            sendMessage(); // Auto-send
+                        };
+
+                        recognition.onerror = (event) => {
+                            console.error('Speech recognition error', event.error);
+                            voiceBtn.classList.remove('text-primary', 'animate-pulse');
+                            alert('Voice search error: ' + event.error);
+                        };
+
+                        recognition.onend = () => {
+                            voiceBtn.classList.remove('text-primary', 'animate-pulse');
+                        };
+                    } else {
+                        alert('Voice search is not supported in this browser.');
+                    }
+                });
+            }
+
+            console.log('CheapChat Enhanced Logic Loaded');
+        });
+    </script>
+</body>
+
+</html>
